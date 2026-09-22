@@ -50,17 +50,20 @@ class UserResponse(BaseModel):
 
 
 import hashlib
+import base64
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash by hashing the input first"""
-    hashed_input = hashlib.sha256(plain_password.encode()).hexdigest()
-    return pwd_context.verify(hashed_input, hashed_password)
+    """Verify a password against its hash using Base64 encoded SHA-256 pre-hashing"""
+    sha256_hash = hashlib.sha256(plain_password.encode()).digest()
+    encoded_pw = base64.b64encode(sha256_hash).decode('utf-8')
+    return pwd_context.verify(encoded_pw, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password using SHA-256 pre-hashing"""
-    hashed_input = hashlib.sha256(password.encode()).hexdigest()
-    return pwd_context.hash(hashed_input)
+    """Hash a password using Base64 encoded SHA-256 pre-hashing"""
+    sha256_hash = hashlib.sha256(password.encode()).digest()
+    encoded_pw = base64.b64encode(sha256_hash).decode('utf-8')
+    return pwd_context.hash(encoded_pw)
 
 
 def generate_api_key() -> str:
