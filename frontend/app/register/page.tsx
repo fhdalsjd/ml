@@ -62,7 +62,7 @@ export default function RegisterPage() {
         router.push("/dashboard");
       } else {
         const data = await response.json();
-        setError(data.message || "Registration failed");
+        setError(data.detail || data.message || "Registration failed");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");

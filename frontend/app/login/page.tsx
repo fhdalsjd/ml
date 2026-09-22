@@ -48,7 +48,7 @@ export default function LoginPage() {
         router.push("/dashboard");
       } else {
         const data = await response.json();
-        setError(data.message || "Login failed");
+        setError(data.detail || data.message || "Login failed");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
