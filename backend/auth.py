@@ -49,14 +49,18 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+import hashlib
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password against its hash by hashing the input first"""
+    hashed_input = hashlib.sha256(plain_password.encode()).hexdigest()
+    return pwd_context.verify(hashed_input, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password, truncating to 72 bytes for bcrypt compatibility"""
-    return pwd_context.hash(password[:72])
+    """Hash a password using SHA-256 pre-hashing"""
+    hashed_input = hashlib.sha256(password.encode()).hexdigest()
+    return pwd_context.hash(hashed_input)
 
 
 def generate_api_key() -> str:
