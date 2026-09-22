@@ -1,44 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
-interface ConnectionStatusProps {
-  lastSyncTime?: Date | null;
-  isSyncing?: boolean;
-}
-
-export default function ConnectionStatus({ lastSyncTime, isSyncing = false }: ConnectionStatusProps) {
+export default function ConnectionStatus() {
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionChecked, setConnectionChecked] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if we have recent sync data (within last 5 minutes)
-    if (lastSyncTime) {
-      const now = new Date().getTime();
-      const lastSync = new Date(lastSyncTime).getTime();
-      const fiveMinutes = 5 * 60 * 1000;
-      setIsConnected(now - lastSync < fiveMinutes);
-    } else {
-      setIsConnected(false);
-    }
-    setConnectionChecked(true);
-  }, [lastSyncTime]);
+    const fetchStatus = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://ml-h6qf.onrender.com";
+        const token = localStorage.getItem("token");
+        if (!token) return;
 
-  if (isSyncing) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-gray-400">
-        <Loader2 className="h-3 w-3 animate-spin text-blue-400" />
-        <span>Syncing with MT5...</span>
-      </div>
-    );
-  }
+        const res = await fetch(`${apiUrl}/api/user/me/sync-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.last_sync_time) {
+            const lastSync = new Date(data.last_sync_time).getTime();
+            const now = new Date().getTime();
+            const fiveMinutes = 5 * 60 * 1000;
+            setIsConnected(now - lastSync < fiveMinutes);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch sync status:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000); // Poll every 30s
+    return () => clearInterval(interval);
+  }, []);
 
-  if (!connectionChecked) {
+  if (loading) {
     return (
       <div className="flex items-center gap-2 text-sm text-gray-400">
         <span className="inline-block h-2 w-2 bg-gray-500 rounded-full animate-pulse" />
-        <span>Checking connection...</span>
+        <span>Checking sync...</span>
       </div>
     );
   }

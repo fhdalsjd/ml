@@ -17,9 +17,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -49,24 +47,8 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSync = async () => {
-    try {
-      setIsSyncing(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(`${apiUrl}/api/sync-mt5`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        await fetchData();
-        setLastSyncTime(new Date());
-      }
-    } catch (err) {
-      console.error("Sync failed:", err);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+// Remove handleSync and related state usage entirely
+// ... existing code ...
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -107,7 +89,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3">
               <span className="font-display italic text-2xl text-foreground">Ledger</span>
               <span className="h-4 w-px bg-border hidden sm:block" />
-              <ConnectionStatus lastSyncTime={lastSyncTime} isSyncing={isSyncing} />
+              <ConnectionStatus />
             </div>
 
             <div className="flex items-center gap-2">
