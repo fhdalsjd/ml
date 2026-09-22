@@ -1,40 +1,416 @@
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from . import models, database, auth
-from .database import engine
+from datetime import datetime, timedelta
+from typing import List, Optional
+from pydantic import BaseModel, EmailStr
+import logging
+import uvicorn
 
-models.Base.metadata.create_all(bind=database.engine)
+from database import get_db, init_db, get_settings
+from auth import (
+    Token, UserCreate, UserLogin, UserResponse,
+    authenticate_user, create_access_token, get_password_hash,
+    get_current_user
+)
+import models
+from mt5_sync import get_mt5_syncer
+from stats import (
+    TradeStats, PeriodStats,
+    calculate_trade_statistics,
+    get_daily_performance,
+    get_weekly_performance,
+    get_monthly_performance
+)
+from scheduler import get_scheduler
 
-app = FastAPI()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-@app.post("/register")
-async def register(email: str, password: str, db: Session = Depends(database.get_db)):
-    hashed_pw = auth.get_password_hash(password)
-    user = models.User(email=email, hashed_password=hashed_pw)
-    db.add(user)
+# Initialize FastAPI app
+app = FastAPI(
+    title="Forex Trading Journal API",
+    description="Professional trading journal with MT5 sync and analytics",
+    version="1.0.0"
+)
+
+settings = get_settings()
+
+# Configure CORS
+origins = settings.allowed_origins.split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Pydantic models for requests/responses
+class TradeCreate(BaseModel):
+    ticket: str
+    symbol: str
+    type: models.TradeType
+    open_time: datetime
+    close_time: Optional[datetime] = None
+    profit: float
+    volume: float
+    open_price: Optional[float] = None
+    close_price: Optional[float] = None
+    stop_loss: Optional[float] = None
+    take_profit: Optional[float] = None
+    commission: Optional[float] = 0.0
+    swap: Optional[float] = 0.0
+    emotion: Optional[str] = None
+    mistake: Optional[str] = None
+    strategy: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class TradeUpdate(BaseModel):
+    emotion: Optional[str] = None
+    mistake: Optional[str] = None
+    strategy: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class TradeResponse(BaseModel):
+    id: int
+    ticket: str
+    symbol: str
+    type: models.TradeType
+    open_time: datetime
+    close_time: Optional[datetime]
+    profit: float
+    volume: float
+    open_price: Optional[float]
+    close_price: Optional[float]
+    stop_loss: Optional[float]
+    take_profit: Optional[float]
+    commission: Optional[float]
+    swap: Optional[float]
+    emotion: Optional[str]
+    mistake: Optional[str]
+    strategy: Optional[str]
+    notes: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class MT5Config(BaseModel):
+    mt5_account_id: str
+    mt5_password: str  # Investor password
+
+
+class SyncResponse(BaseModel):
+    success: bool
+    synced: int
+    new: int
+    updated: int
+    total_trades: Optional[int] = None
+    error: Optional[str] = None
+
+
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database and start background scheduler"""
+    logger.info("Starting application...")
+    init_db()
+    logger.info("Database initialized")
+    
+    # Start background scheduler
+    scheduler = get_scheduler()
+    scheduler.start()
+    logger.info("Background scheduler started")
+
+
+# Shutdown event
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    logger.info("Shutting down application...")
+    scheduler = get_scheduler()
+    scheduler.shutdown()
+
+
+# Health check
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+# Authentication endpoints
+@app.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    """Register a new user"""
+    # Check if user exists
+    existing_user = db.query(models.User).filter(
+        (models.User.email == user_data.email) | (models.User.username == user_data.username)
+    ).first()
+    
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email or username already registered"
+        )
+    
+    # Create new user
+    hashed_password = get_password_hash(user_data.password)
+    new_user = models.User(
+        email=user_data.email,
+        username=user_data.username,
+        hashed_password=hashed_password
+    )
+    
+    db.add(new_user)
     db.commit()
-    return {"message": "User created"}
+    db.refresh(new_user)
+    
+    logger.info(f"New user registered: {new_user.email}")
+    return new_user
 
-@app.post("/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    if not user or not auth.verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
-    token = auth.create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
 
-@app.get("/api/trades")
-async def get_trades(db: Session = Depends(database.get_db)):
-    return db.query(models.Trade).all()
+@app.post("/login", response_model=Token)
+async def login(user_data: UserLogin, db: Session = Depends(get_db)):
+    """Login and get access token"""
+    user = authenticate_user(db, user_data.email, user_data.password)
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token = create_access_token(data={"sub": user.email})
+    logger.info(f"User logged in: {user.email}")
+    
+    return {"access_token": access_token, "token_type": "bearer"}
 
-@app.post("/api/update-trade/{trade_id}")
-async def update_trade(trade_id: int, emotion: str, mistake: str, db: Session = Depends(database.get_db)):
-    trade = db.query(models.Trade).filter(models.Trade.id == trade_id).first()
+
+# User endpoints
+@app.get("/api/user/me", response_model=UserResponse)
+async def get_current_user_info(current_user: models.User = Depends(get_current_user)):
+    """Get current user information"""
+    return current_user
+
+
+@app.post("/api/user/mt5-config")
+async def configure_mt5(
+    config: MT5Config,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Configure MT5 account for user"""
+    current_user.mt5_account_id = config.mt5_account_id
+    current_user.mt5_password = config.mt5_password  # In production, encrypt this
+    
+    db.commit()
+    logger.info(f"MT5 account configured for user: {current_user.email}")
+    
+    return {"message": "MT5 account configured successfully"}
+
+
+# Trade endpoints
+@app.get("/api/trades", response_model=List[TradeResponse])
+async def get_trades(
+    skip: int = 0,
+    limit: int = 100,
+    symbol: Optional[str] = None,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get user's trades with optional filters"""
+    query = db.query(models.Trade).filter(models.Trade.user_id == current_user.id)
+    
+    if symbol:
+        query = query.filter(models.Trade.symbol == symbol)
+    
+    trades = query.order_by(models.Trade.close_time.desc()).offset(skip).limit(limit).all()
+    return trades
+
+
+@app.post("/api/trades", response_model=TradeResponse, status_code=status.HTTP_201_CREATED)
+async def create_trade(
+    trade_data: TradeCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new trade manually"""
+    # Check if trade with ticket already exists
+    existing_trade = db.query(models.Trade).filter(
+        models.Trade.ticket == trade_data.ticket,
+        models.Trade.user_id == current_user.id
+    ).first()
+    
+    if existing_trade:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Trade with this ticket already exists"
+        )
+    
+    new_trade = models.Trade(
+        **trade_data.dict(),
+        user_id=current_user.id
+    )
+    
+    db.add(new_trade)
+    db.commit()
+    db.refresh(new_trade)
+    
+    logger.info(f"New trade created: {new_trade.ticket} by {current_user.email}")
+    return new_trade
+
+
+@app.get("/api/trades/{trade_id}", response_model=TradeResponse)
+async def get_trade(
+    trade_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific trade"""
+    trade = db.query(models.Trade).filter(
+        models.Trade.id == trade_id,
+        models.Trade.user_id == current_user.id
+    ).first()
+    
     if not trade:
         raise HTTPException(status_code=404, detail="Trade not found")
-    trade.emotion = emotion
-    trade.mistake = mistake
+    
+    return trade
+
+
+@app.patch("/api/trades/{trade_id}", response_model=TradeResponse)
+async def update_trade(
+    trade_id: int,
+    trade_update: TradeUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update trade annotations (emotion, mistake, strategy, notes)"""
+    trade = db.query(models.Trade).filter(
+        models.Trade.id == trade_id,
+        models.Trade.user_id == current_user.id
+    ).first()
+    
+    if not trade:
+        raise HTTPException(status_code=404, detail="Trade not found")
+    
+    # Update only provided fields
+    for field, value in trade_update.dict(exclude_unset=True).items():
+        setattr(trade, field, value)
+    
+    trade.updated_at = datetime.utcnow()
     db.commit()
-    return {"status": "success"}
+    db.refresh(trade)
+    
+    logger.info(f"Trade updated: {trade.ticket} by {current_user.email}")
+    return trade
+
+
+@app.delete("/api/trades/{trade_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_trade(
+    trade_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a trade"""
+    trade = db.query(models.Trade).filter(
+        models.Trade.id == trade_id,
+        models.Trade.user_id == current_user.id
+    ).first()
+    
+    if not trade:
+        raise HTTPException(status_code=404, detail="Trade not found")
+    
+    db.delete(trade)
+    db.commit()
+    
+    logger.info(f"Trade deleted: {trade.ticket} by {current_user.email}")
+    return None
+
+
+# MT5 Sync endpoint
+@app.post("/api/sync-mt5", response_model=SyncResponse)
+async def sync_mt5_trades(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Manually trigger MT5 sync for current user"""
+    if not current_user.mt5_account_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MT5 account not configured. Please configure MT5 first."
+        )
+    
+    logger.info(f"Manual MT5 sync triggered by {current_user.email}")
+    syncer = get_mt5_syncer()
+    result = await syncer.sync_user_trades(current_user, db)
+    
+    return result
+
+
+# Statistics endpoints
+@app.get("/api/stats", response_model=TradeStats)
+async def get_statistics(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get comprehensive trade statistics"""
+    stats = calculate_trade_statistics(db, current_user.id, start_date, end_date)
+    return stats
+
+
+@app.get("/api/stats/daily", response_model=List[PeriodStats])
+async def get_daily_stats(
+    days: int = 30,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get daily performance statistics"""
+    return get_daily_performance(db, current_user.id, days)
+
+
+@app.get("/api/stats/weekly", response_model=List[PeriodStats])
+async def get_weekly_stats(
+    weeks: int = 12,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get weekly performance statistics"""
+    return get_weekly_performance(db, current_user.id, weeks)
+
+
+@app.get("/api/stats/monthly", response_model=List[PeriodStats])
+async def get_monthly_stats(
+    months: int = 12,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get monthly performance statistics"""
+    return get_monthly_performance(db, current_user.id, months)
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
