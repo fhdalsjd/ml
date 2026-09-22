@@ -6,8 +6,9 @@ import StatsCards from "@/components/StatsCards";
 import TradeChart from "@/components/TradeChart";
 import TradeTable from "@/components/TradeTable";
 import TradeDetailModal from "@/components/TradeDetailModal";
+import ConnectionStatus from "@/components/ConnectionStatus";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, LogOut, TrendingUp, Plus, Calendar, BarChart3 } from "lucide-react";
+import { RefreshCw, LogOut, TrendingUp, Plus, BarChart3 } from "lucide-react";
 import { Trade } from "@/components/TradeTable";
 
 export default function DashboardPage() {
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -57,6 +59,7 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         await fetchData();
+        setLastSyncTime(new Date());
       }
     } catch (err) {
       console.error("Sync failed:", err);
@@ -121,10 +124,7 @@ export default function DashboardPage() {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                   Trading Journal Pro
                 </h1>
-                <p className="text-sm text-gray-400 flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                  MetaTrader 5 Connected
-                </p>
+                <ConnectionStatus lastSyncTime={lastSyncTime} isSyncing={isSyncing} />
               </div>
             </div>
 
@@ -140,14 +140,7 @@ export default function DashboardPage() {
 
               <Button
                 variant="outline"
-                className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-600"
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Calendar
-              </Button>
-
-              <Button
-                variant="outline"
+                onClick={() => router.push("/analytics")}
                 className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-600"
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
