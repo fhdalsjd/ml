@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -56,17 +55,13 @@ export default function TradeTable({ trades, onTradeClick }: TradeTableProps) {
   const filteredAndSortedTrades = useMemo(() => {
     return [...trades]
       .filter((trade) => {
-        // Symbol filter
         if (symbolFilter && !trade.symbol.toLowerCase().includes(symbolFilter.toLowerCase())) {
           return false;
         }
-        
-        // Status filter
         if (statusFilter === "OPEN" && trade.status !== "OPEN") return false;
         if (statusFilter === "CLOSED" && trade.status !== "CLOSED") return false;
         if (statusFilter === "WINNING" && (trade.pnl === null || trade.pnl <= 0)) return false;
         if (statusFilter === "LOSING" && (trade.pnl === null || trade.pnl >= 0)) return false;
-        
         return true;
       })
       .sort((a, b) => {
@@ -117,27 +112,26 @@ export default function TradeTable({ trades, onTradeClick }: TradeTableProps) {
   const SortButton = ({ field, label }: { field: SortField; label: string }) => (
     <button
       onClick={() => handleSort(field)}
-      className="flex items-center gap-1 hover:text-blue-400 transition-colors group"
+      className="flex items-center gap-1 hover:text-primary transition-colors group"
     >
       {label}
-      <ArrowUpDown className={`h-3 w-3 transition-all ${sortField === field ? "text-blue-400" : "text-gray-600 group-hover:text-blue-400"}`} />
+      <ArrowUpDown className={`h-3 w-3 transition-all ${sortField === field ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
     </button>
   );
 
   const FilterButton = ({ status, label }: { status: StatusFilter; label: string }) => (
     <button
       onClick={() => setStatusFilter(status)}
-      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+      className={`px-3 py-1.5 text-xs font-mono rounded-sm border transition-colors ${
         statusFilter === status
-          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
-          : "bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-gray-200"
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-transparent text-muted-foreground border-border hover:text-foreground hover:border-muted-foreground"
       }`}
     >
       {label}
     </button>
   );
 
-  // Calculate stats for current filter
   const stats = useMemo(() => {
     const winning = filteredAndSortedTrades.filter(t => t.pnl !== null && t.pnl > 0).length;
     const losing = filteredAndSortedTrades.filter(t => t.pnl !== null && t.pnl < 0).length;
@@ -150,7 +144,7 @@ export default function TradeTable({ trades, onTradeClick }: TradeTableProps) {
       {/* Filters */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="h-4 w-4 text-gray-400" />
+          <Filter className="h-4 w-4 text-muted-foreground" />
           <FilterButton status="ALL" label="All" />
           <FilterButton status="OPEN" label="Open" />
           <FilterButton status="CLOSED" label="Closed" />
@@ -158,109 +152,97 @@ export default function TradeTable({ trades, onTradeClick }: TradeTableProps) {
           <FilterButton status="LOSING" label="Losers" />
         </div>
 
-        <div className="flex items-center gap-3">
-          <Input
-            type="text"
-            placeholder="Filter by symbol..."
-            value={symbolFilter}
-            onChange={(e) => setSymbolFilter(e.target.value)}
-            className="w-48 bg-gray-800/50 border-gray-700 focus:border-blue-500 text-gray-100 placeholder:text-gray-500"
-          />
-        </div>
+        <Input
+          type="text"
+          placeholder="Filter by symbol…"
+          value={symbolFilter}
+          onChange={(e) => setSymbolFilter(e.target.value)}
+          className="w-48"
+        />
       </div>
 
-      {/* Stats Summary */}
-      <div className="flex items-center gap-6 p-4 bg-gray-800/30 rounded-lg border border-gray-800/50">
+      {/* Summary strip */}
+      <div className="flex flex-wrap items-center gap-6 px-4 py-3 border border-border rounded-sm bg-background/40 font-mono text-sm tabular-nums">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-400">Showing:</span>
-          <span className="text-sm font-semibold text-gray-200">{stats.total} trades</span>
+          <span className="text-muted-foreground">Showing</span>
+          <span className="text-foreground">{stats.total} trades</span>
         </div>
-        <div className="h-4 w-px bg-gray-700" />
+        <div className="h-4 w-px bg-border" />
         <div className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-green-400" />
-          <span className="text-sm text-gray-400">Wins:</span>
-          <span className="text-sm font-semibold text-green-400">{stats.winning}</span>
+          <span className="text-muted-foreground">Wins</span>
+          <span className="text-green-400">{stats.winning}</span>
         </div>
-        <div className="h-4 w-px bg-gray-700" />
+        <div className="h-4 w-px bg-border" />
         <div className="flex items-center gap-2">
           <TrendingDown className="h-4 w-4 text-red-400" />
-          <span className="text-sm text-gray-400">Losses:</span>
-          <span className="text-sm font-semibold text-red-400">{stats.losing}</span>
+          <span className="text-muted-foreground">Losses</span>
+          <span className="text-red-400">{stats.losing}</span>
         </div>
-        <div className="h-4 w-px bg-gray-700" />
+        <div className="h-4 w-px bg-border" />
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-400">Total P&L:</span>
-          <span className={`text-sm font-bold ${stats.totalPnL >= 0 ? "text-green-400" : "text-red-400"}`}>
+          <span className="text-muted-foreground">Total P&L</span>
+          <span className={stats.totalPnL >= 0 ? "text-green-400" : "text-red-400"}>
             {formatCurrency(stats.totalPnL)}
           </span>
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-gray-800/50 overflow-hidden">
+      <div className="rounded-sm border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-800/50 hover:bg-gray-800/50 border-gray-800/50">
-                <TableHead className="text-gray-400 font-semibold">
-                  <SortButton field="symbol" label="Symbol" />
-                </TableHead>
-                <TableHead className="text-gray-400 font-semibold">Type</TableHead>
-                <TableHead className="text-gray-400 font-semibold">
-                  <SortButton field="entryDate" label="Entry Date" />
-                </TableHead>
-                <TableHead className="text-gray-400 font-semibold">Exit Date</TableHead>
-                <TableHead className="text-gray-400 font-semibold text-right">Entry Price</TableHead>
-                <TableHead className="text-gray-400 font-semibold text-right">Exit Price</TableHead>
-                <TableHead className="text-gray-400 font-semibold text-right">Qty</TableHead>
-                <TableHead className="text-gray-400 font-semibold text-right">
-                  <SortButton field="pnl" label="P&L" />
-                </TableHead>
-                <TableHead className="text-gray-400 font-semibold">Status</TableHead>
-                <TableHead className="text-gray-400 font-semibold text-center">Actions</TableHead>
+              <TableRow className="bg-transparent hover:bg-transparent border-border">
+                <TableHead><SortButton field="symbol" label="Symbol" /></TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead><SortButton field="entryDate" label="Entry date" /></TableHead>
+                <TableHead>Exit date</TableHead>
+                <TableHead className="text-right">Entry price</TableHead>
+                <TableHead className="text-right">Exit price</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right"><SortButton field="pnl" label="P&L" /></TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-center">View</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSortedTrades.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-gray-500 py-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="text-4xl">📭</div>
-                      <p className="font-medium">No trades found</p>
-                      <p className="text-sm text-gray-600">Try adjusting your filters</p>
-                    </div>
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-12">
+                    <p className="font-medium text-foreground">No trades found</p>
+                    <p className="text-sm mt-1">Try adjusting your filters</p>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredAndSortedTrades.map((trade) => (
-                  <TableRow 
-                    key={trade.id} 
-                    className="cursor-pointer hover:bg-gray-800/30 border-gray-800/30 transition-colors"
+                  <TableRow
+                    key={trade.id}
+                    className="cursor-pointer hover:bg-accent/50 border-border transition-colors"
                     onClick={() => onTradeClick(trade)}
                   >
-                    <TableCell className="font-semibold text-gray-200">{trade.symbol}</TableCell>
+                    <TableCell className="font-medium text-foreground">{trade.symbol}</TableCell>
                     <TableCell>
-                      <Badge 
-                        variant={trade.type === "LONG" ? "default" : "secondary"}
+                      <Badge
                         className={trade.type === "LONG"
-                          ? "bg-green-600/20 text-green-400 border-green-600/50"
-                          : "bg-red-600/20 text-red-400 border-red-600/50"}
+                          ? "bg-green-600/10 text-green-400 border-green-600/30"
+                          : "bg-red-600/10 text-red-400 border-red-600/30"}
                       >
                         {trade.type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-gray-300">{formatDate(trade.entryDate)}</TableCell>
-                    <TableCell className="text-gray-300">{formatDate(trade.exitDate)}</TableCell>
-                    <TableCell className="text-gray-300 text-right font-mono">${trade.entryPrice.toFixed(2)}</TableCell>
-                    <TableCell className="text-gray-300 text-right font-mono">
+                    <TableCell className="text-muted-foreground font-mono text-sm">{formatDate(trade.entryDate)}</TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-sm">{formatDate(trade.exitDate)}</TableCell>
+                    <TableCell className="text-foreground text-right font-mono text-sm tabular-nums">${trade.entryPrice.toFixed(2)}</TableCell>
+                    <TableCell className="text-foreground text-right font-mono text-sm tabular-nums">
                       {trade.exitPrice ? `$${trade.exitPrice.toFixed(2)}` : "-"}
                     </TableCell>
-                    <TableCell className="text-gray-300 text-right">{trade.quantity}</TableCell>
+                    <TableCell className="text-foreground text-right font-mono text-sm tabular-nums">{trade.quantity}</TableCell>
                     <TableCell className="text-right">
                       <span
-                        className={`font-bold ${
+                        className={`font-mono text-sm font-medium tabular-nums ${
                           trade.pnl === null
-                            ? "text-gray-500"
+                            ? "text-muted-foreground"
                             : trade.pnl >= 0
                             ? "text-green-400"
                             : "text-red-400"
@@ -270,11 +252,11 @@ export default function TradeTable({ trades, onTradeClick }: TradeTableProps) {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge 
+                      <Badge
                         variant={trade.status === "OPEN" ? "outline" : "default"}
                         className={trade.status === "OPEN"
-                          ? "border-yellow-600/50 text-yellow-400 bg-yellow-600/10"
-                          : "bg-blue-600/20 text-blue-400 border-blue-600/50"}
+                          ? "border-primary/50 text-primary bg-primary/10"
+                          : "bg-secondary text-secondary-foreground border-transparent"}
                       >
                         {trade.status}
                       </Badge>
@@ -287,7 +269,6 @@ export default function TradeTable({ trades, onTradeClick }: TradeTableProps) {
                           e.stopPropagation();
                           onTradeClick(trade);
                         }}
-                        className="hover:bg-blue-600/20 hover:text-blue-400"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>

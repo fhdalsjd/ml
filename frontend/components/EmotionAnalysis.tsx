@@ -15,10 +15,10 @@ interface EmotionAnalysisProps {
 }
 
 const EMOTION_COLORS: Record<string, string> = {
-  confident: "#10b981",
-  calm: "#3b82f6",
+  confident: "#3FA972",
+  calm: "#C99A46",
   anxious: "#f59e0b",
-  fearful: "#ef4444",
+  fearful: "#D1554A",
   greedy: "#fb923c",
   regretful: "#a855f7",
   disciplined: "#06b6d4",
@@ -76,7 +76,7 @@ export default function EmotionAnalysis({ trades }: EmotionAnalysisProps) {
       const data = payload[0].payload;
       
       return (
-        <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl p-4">
+        <div className="bg-gray-900/95 border border-gray-700/50 rounded-sm shadow-none p-4">
           <p className="text-sm font-bold text-gray-200 mb-2">{data.name}</p>
           <div className="space-y-1">
             <div className="flex justify-between gap-4">

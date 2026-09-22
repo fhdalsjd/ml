@@ -8,7 +8,7 @@ import TradeTable from "@/components/TradeTable";
 import TradeDetailModal from "@/components/TradeDetailModal";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, LogOut, TrendingUp, Plus, BarChart3 } from "lucide-react";
+import { RefreshCw, LogOut, Plus, BarChart3 } from "lucide-react";
 import { Trade } from "@/components/TradeTable";
 
 export default function DashboardPage() {
@@ -96,62 +96,32 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-gray-950 via-blue-950/20 to-gray-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="h-16 w-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
-            <TrendingUp className="h-8 w-8 text-blue-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-          </div>
-          <span className="text-gray-300 font-medium">Loading Trading Journal...</span>
-        </div>
-      </div>
-    );
+    return <LedgerLoading />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/10 to-gray-950 text-gray-100">
-      {/* Header with glass morphism effect */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-gray-900/80 border-b border-gray-800/50 shadow-2xl">
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
         <div className="container mx-auto px-6 py-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <div className="relative p-3 bg-gradient-to-br from-blue-600 to-blue-500 rounded-xl shadow-lg shadow-blue-500/50">
-                <TrendingUp className="h-8 w-8 text-white" />
-                <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-gray-900 animate-pulse" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                  Trading Journal Pro
-                </h1>
-                <ConnectionStatus lastSyncTime={lastSyncTime} isSyncing={isSyncing} />
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="font-display italic text-2xl text-foreground">Ledger</span>
+              <span className="h-4 w-px bg-border hidden sm:block" />
+              <ConnectionStatus lastSyncTime={lastSyncTime} isSyncing={isSyncing} />
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleSync}
-                disabled={isSyncing}
-                className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg shadow-blue-500/30 border-0"
-              >
+            <div className="flex items-center gap-2">
+              <Button onClick={handleSync} disabled={isSyncing} size="sm">
                 <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
-                {isSyncing ? "Syncing..." : "Sync MT5"}
+                {isSyncing ? "Syncing…" : "Sync MT5"}
               </Button>
 
-              <Button
-                variant="outline"
-                onClick={() => router.push("/analytics")}
-                className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-800 hover:text-white hover:border-gray-600"
-              >
+              <Button variant="outline" size="sm" onClick={() => router.push("/analytics")}>
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Analytics
               </Button>
 
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-red-900/50 hover:text-red-300 hover:border-red-800"
-              >
+              <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
@@ -160,62 +130,46 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8 space-y-8">
-        {/* Stats Cards with enhanced styling */}
+      <main className="container mx-auto px-6 py-10 space-y-10">
         <div className="animate-fade-in">
           <StatsCards stats={stats} />
         </div>
 
-        {/* Performance Chart with glass card */}
         <div className="animate-fade-in-delay-1">
-          <div className="bg-gradient-to-br from-gray-900/90 to-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800/50 shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-gray-800/50 bg-gradient-to-r from-blue-600/10 to-transparent">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-100">Performance Curve</h2>
-                  <p className="text-sm text-gray-400 mt-1">Cumulative P&L over time</p>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <div className="h-2 w-2 bg-blue-500 rounded-full" />
-                  <span>Equity Growth</span>
-                </div>
-              </div>
-            </div>
-            <div className="p-6">
-              <TradeChart trades={trades} />
-            </div>
+          <SectionHeader
+            eyebrow="Performance"
+            title="Equity curve"
+            subtitle="Cumulative P&L over time"
+          />
+          <div className="border border-border rounded-sm p-6 bg-card">
+            <TradeChart trades={trades} />
           </div>
         </div>
 
-        {/* Trade History Table with glass card */}
         <div className="animate-fade-in-delay-2">
-          <div className="bg-gradient-to-br from-gray-900/90 to-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800/50 shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-gray-800/50 bg-gradient-to-r from-purple-600/10 to-transparent">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-100">Trade History</h2>
-                  <p className="text-sm text-gray-400 mt-1">Complete journal with notes & analysis</p>
-                </div>
-                <Button className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white shadow-lg shadow-green-500/30">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Trade
-                </Button>
-              </div>
-            </div>
-            <div className="p-6">
-              <TradeTable
-                trades={trades}
-                onTradeClick={(trade) => {
-                  setSelectedTrade(trade);
-                  setIsModalOpen(true);
-                }}
-              />
-            </div>
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <SectionHeader
+              eyebrow="Record"
+              title="Trade history"
+              subtitle="The complete journal — notes, mistakes, and analysis"
+            />
+            <Button size="sm" className="mb-1">
+              <Plus className="h-4 w-4 mr-2" />
+              New trade
+            </Button>
+          </div>
+          <div className="border border-border rounded-sm bg-card p-6">
+            <TradeTable
+              trades={trades}
+              onTradeClick={(trade) => {
+                setSelectedTrade(trade);
+                setIsModalOpen(true);
+              }}
+            />
           </div>
         </div>
       </main>
 
-      {/* Trade Detail Modal */}
       {selectedTrade && (
         <TradeDetailModal
           trade={selectedTrade}
@@ -227,6 +181,51 @@ export default function DashboardPage() {
           onSave={handleSaveTradeNotes}
         />
       )}
+    </div>
+  );
+}
+
+function SectionHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle: string }) {
+  return (
+    <div className="mb-4">
+      <p className="font-mono text-xs text-primary mb-1">{eyebrow}</p>
+      <h2 className="font-display text-2xl text-foreground">{title}</h2>
+      <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+    </div>
+  );
+}
+
+function LedgerLoading() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-6">
+      <div className="w-full max-w-sm">
+        <div className="flex items-baseline justify-between mb-6">
+          <span className="font-display italic text-xl text-foreground">Ledger</span>
+          <span className="font-mono text-xs text-muted-foreground">opening…</span>
+        </div>
+        <svg viewBox="0 0 300 90" className="w-full h-auto mb-6" fill="none">
+          <path
+            d="M0,70 L25,65 L50,72 L75,55 L100,60 L125,35 L150,45 L175,20 L200,30 L225,12 L250,22 L275,5 L300,15"
+            stroke="hsl(var(--primary))"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            pathLength="1000"
+            strokeDasharray="1000"
+            className="animate-draw-line"
+          />
+        </svg>
+        <div className="space-y-2">
+          {[100, 88, 72].map((w, i) => (
+            <div key={i} className="h-2 rounded-sm bg-border overflow-hidden">
+              <div
+                className="h-full bg-primary/50 animate-pulse"
+                style={{ width: `${w}%`, animationDelay: `${i * 150}ms` }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -15,14 +15,14 @@ interface StrategyBreakdownProps {
 }
 
 const COLORS = [
-  "#3b82f6", // blue
-  "#10b981", // green
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#8b5cf6", // violet
-  "#ec4899", // pink
-  "#06b6d4", // cyan
-  "#f97316", // orange
+  "#C99A46", // gold
+  "#3FA972", // gain green
+  "#8AA4BE", // slate blue
+  "#D1554A", // loss red
+  "#B08AC7", // violet
+  "#C97FA0", // rose
+  "#5FA8A0", // teal
+  "#D99A5C", // amber
 ];
 
 export default function StrategyBreakdown({ trades }: StrategyBreakdownProps) {
@@ -75,7 +75,7 @@ export default function StrategyBreakdown({ trades }: StrategyBreakdownProps) {
       if (!strategy) return null;
       
       return (
-        <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl p-4">
+        <div className="bg-gray-900/95 border border-gray-700/50 rounded-sm shadow-none p-4">
           <p className="text-sm font-bold text-gray-200 mb-2">{strategy.name}</p>
           <div className="space-y-1">
             <div className="flex justify-between gap-4">

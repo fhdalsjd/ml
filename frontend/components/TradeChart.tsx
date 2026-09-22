@@ -52,7 +52,7 @@ export default function TradeChart({ trades }: TradeChartProps) {
       const isPositive = data.cumulative >= 0;
       
       return (
-        <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl p-4">
+        <div className="bg-gray-900/95 border border-gray-700/50 rounded-sm shadow-none p-4">
           <p className="text-sm text-gray-400 mb-2 font-medium">
             {formatDate(data.date)}
           </p>
@@ -110,16 +110,16 @@ export default function TradeChart({ trades }: TradeChartProps) {
         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="colorPnlPositive" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+              <stop offset="5%" stopColor="#3FA972" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#3FA972" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="colorPnlNegative" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+              <stop offset="5%" stopColor="#D1554A" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#D1554A" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="colorPnl" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              <stop offset="5%" stopColor="#C99A46" stopOpacity={0.4} />
+              <stop offset="95%" stopColor="#C99A46" stopOpacity={0} />
             </linearGradient>
           </defs>
           
@@ -148,7 +148,7 @@ export default function TradeChart({ trades }: TradeChartProps) {
             width={80}
           />
           
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#3b82f6", strokeWidth: 1, strokeDasharray: "5 5" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#C99A46", strokeWidth: 1, strokeDasharray: "5 5" }} />
           
           {/* Zero line reference */}
           <ReferenceLine 
@@ -167,7 +167,7 @@ export default function TradeChart({ trades }: TradeChartProps) {
           <Area
             type="monotone"
             dataKey="cumulative"
-            stroke={isPositiveOverall ? "#10b981" : "#ef4444"}
+            stroke={isPositiveOverall ? "#3FA972" : "#D1554A"}
             strokeWidth={3}
             fill={isPositiveOverall ? "url(#colorPnlPositive)" : "url(#colorPnlNegative)"}
             animationDuration={1000}

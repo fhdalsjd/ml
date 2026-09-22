@@ -107,7 +107,7 @@ export default function PerformanceCalendar({ trades }: PerformanceCalendarProps
                   key={dayIdx}
                   className={`
                     aspect-square rounded-lg border-2 transition-all cursor-pointer
-                    hover:scale-110 hover:z-10 hover:shadow-xl
+                    hover:scale-110 hover:z-10 hover:shadow-none
                     flex flex-col items-center justify-center
                     ${hasTrades ? getColorClass(pnl) : "bg-gray-800/20 border-gray-800/30"}
                     group relative
@@ -123,7 +123,7 @@ export default function PerformanceCalendar({ trades }: PerformanceCalendarProps
                       </span>
                       
                       {/* Tooltip on hover */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg shadow-none opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                         <div className="text-xs text-gray-300 font-medium">
                           {format(date, "MMM d, yyyy")}
                         </div>

@@ -50,7 +50,7 @@ function StatCard({
   };
 
   return (
-    <Card className="bg-gradient-to-br from-gray-900/90 to-gray-900/50 backdrop-blur-xl border-gray-800/50 shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]">
+    <Card className="bg-gradient-to-br from-gray-900/90 to-gray-900/50 border-gray-800/50 shadow-none hover:shadow-none transition-all">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-gray-400">
           {title}

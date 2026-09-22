@@ -4,35 +4,35 @@
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    --background: 216 26% 7%;
+    --foreground: 210 22% 90%;
 
-    --card: 224 71% 6%;
-    --card-foreground: 213 31% 91%;
+    --card: 215 22% 11%;
+    --card-foreground: 210 22% 90%;
 
-    --popover: 224 71% 6%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 215 24% 9%;
+    --popover-foreground: 210 22% 90%;
 
-    --primary: 210 100% 50%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 39 51% 55%;
+    --primary-foreground: 220 40% 9%;
 
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 215 18% 16%;
+    --secondary-foreground: 210 22% 90%;
 
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 215 20% 14%;
+    --muted-foreground: 215 12% 62%;
 
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 215 18% 17%;
+    --accent-foreground: 210 22% 90%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 6 55% 55%;
+    --destructive-foreground: 30 40% 96%;
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 210 100% 50%;
+    --border: 215 18% 18%;
+    --input: 215 18% 18%;
+    --ring: 39 51% 55%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
   }
 }
 
@@ -41,16 +41,23 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "cv11", "ss01";
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+  /* Tabular figures everywhere a number appears in the ledger */
+  .font-mono, .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 @layer utilities {
-  /* Fade-in animations */
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(8px);
     }
     to {
       opacity: 1;
@@ -70,28 +77,46 @@
     animation: fadeIn 0.5s ease-out 0.2s both;
   }
 
-  /* Smooth scrolling */
+  /* Faint horizontal rule lines — the ledger-paper motif used on key surfaces */
+  .bg-ledger {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      hsla(var(--border) / 0.55) 0px,
+      hsla(var(--border) / 0.55) 1px,
+      transparent 1px,
+      transparent 34px
+    );
+  }
+
+  .bg-ledger-fine {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      hsla(var(--border) / 0.4) 0px,
+      hsla(var(--border) / 0.4) 1px,
+      transparent 1px,
+      transparent 22px
+    );
+  }
+
   html {
     scroll-behavior: smooth;
   }
 
-  /* Custom scrollbar for dark theme */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: rgb(17, 24, 39);
-    border-radius: 4px;
+    background: hsl(var(--background));
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgb(55, 65, 81);
+    background: hsl(var(--border));
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(75, 85, 99);
+    background: hsl(var(--muted-foreground) / 0.4);
   }
 }

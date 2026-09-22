@@ -153,7 +153,7 @@ export default function TradeDetailModal({ trade, open, onClose, onSave }: Trade
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto bg-gradient-to-br from-gray-900 to-gray-900/95 border-gray-800/50 shadow-2xl">
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto bg-gradient-to-br from-gray-900 to-gray-900/95 border-gray-800/50 shadow-none">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-2xl">
             <span className="font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
@@ -192,7 +192,7 @@ export default function TradeDetailModal({ trade, open, onClose, onSave }: Trade
 
         <div className="space-y-6">
           {/* Trade Details - Enhanced Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gradient-to-br from-gray-800/50 to-gray-800/30 rounded-xl border border-gray-700/50">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gradient-to-br from-gray-800/50 to-gray-800/30 rounded-sm border border-gray-700/50">
             <div className="space-y-1">
               <p className="text-xs text-gray-500 uppercase tracking-wider">Entry Date</p>
               <p className="font-semibold text-gray-200 text-sm">{formatDate(trade.entryDate)}</p>
@@ -289,7 +289,7 @@ export default function TradeDetailModal({ trade, open, onClose, onSave }: Trade
                     className={`
                       flex items-center gap-2 px-3 py-2 rounded-lg border transition-all
                       ${isSelected 
-                        ? emotion.color + " border-2 shadow-lg" 
+                        ? emotion.color + " border-2 " 
                         : "bg-gray-800/30 border-gray-700/50 text-gray-400 hover:bg-gray-800/50"
                       }
                     `}
@@ -403,7 +403,7 @@ export default function TradeDetailModal({ trade, open, onClose, onSave }: Trade
           </Button>
           <Button 
             onClick={handleSave}
-            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg"
+            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white"
           >
             Save Journal Entry
           </Button>

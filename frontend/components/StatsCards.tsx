@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, Target, Activity, Award, BarChart3, Percent } from "lucide-react";
 
 interface StatCardProps {
@@ -13,49 +12,24 @@ interface StatCardProps {
 }
 
 function StatCard({ title, value, change, icon, trend = "neutral", subtitle }: StatCardProps) {
-  const getTrendColor = () => {
-    if (trend === "up") return "text-green-400";
-    if (trend === "down") return "text-red-400";
-    return "text-gray-400";
-  };
-
-  const getTrendBg = () => {
-    if (trend === "up") return "bg-green-600/10";
-    if (trend === "down") return "bg-red-600/10";
-    return "bg-gray-600/10";
-  };
-
-  const getTrendIcon = () => {
-    if (trend === "up") return <TrendingUp className="h-3 w-3" />;
-    if (trend === "down") return <TrendingDown className="h-3 w-3" />;
-    return null;
-  };
+  const trendColor = trend === "up" ? "text-green-400" : trend === "down" ? "text-red-400" : "text-muted-foreground";
 
   return (
-    <Card className="bg-gradient-to-br from-gray-900/90 to-gray-900/50 backdrop-blur-xl border-gray-800/50 shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-400">
-          {title}
-        </CardTitle>
-        <div className={`h-10 w-10 rounded-full ${getTrendBg()} flex items-center justify-center`}>
-          <div className={getTrendColor()}>{icon}</div>
+    <div className="border border-border rounded-sm bg-card p-5">
+      <div className="flex items-start justify-between mb-3">
+        <span className="text-sm text-muted-foreground">{title}</span>
+        <div className={trendColor}>{icon}</div>
+      </div>
+      <div className="font-mono text-2xl tabular-nums text-foreground">{value}</div>
+      {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+      {change !== undefined && (
+        <div className={`flex items-center gap-1 text-xs ${trendColor} mt-3 font-mono tabular-nums`}>
+          {trend === "up" && <TrendingUp className="h-3 w-3" />}
+          {trend === "down" && <TrendingDown className="h-3 w-3" />}
+          <span>{change > 0 ? "+" : ""}{change.toFixed(1)}% from last period</span>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold bg-gradient-to-br from-gray-100 to-gray-300 bg-clip-text text-transparent">
-          {value}
-        </div>
-        {subtitle && (
-          <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
-        )}
-        {change !== undefined && (
-          <div className={`flex items-center gap-1 text-xs ${getTrendColor()} mt-2 font-medium`}>
-            {getTrendIcon()}
-            <span>{change > 0 ? "+" : ""}{change.toFixed(1)}% from last period</span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 
@@ -79,14 +53,10 @@ export default function StatsCards({ stats }: StatsCardsProps) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map(i => (
-          <Card key={i} className="bg-gradient-to-br from-gray-900/90 to-gray-900/50 backdrop-blur-xl border-gray-800/50 animate-pulse">
-            <CardHeader className="pb-2">
-              <div className="h-4 w-24 bg-gray-800 rounded" />
-            </CardHeader>
-            <CardContent>
-              <div className="h-8 w-32 bg-gray-800 rounded" />
-            </CardContent>
-          </Card>
+          <div key={i} className="border border-border rounded-sm bg-card p-5 animate-pulse">
+            <div className="h-4 w-24 bg-border rounded-sm mb-4" />
+            <div className="h-7 w-32 bg-border rounded-sm" />
+          </div>
         ))}
       </div>
     );
@@ -110,14 +80,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
     return stats.winRateChange > 0 ? "up" : stats.winRateChange < 0 ? "down" : "neutral";
   };
 
-  const getWinRateColor = () => {
-    if (stats.winRate >= 60) return "up";
-    if (stats.winRate < 40) return "down";
-    return "neutral";
-  };
-
-  // Calculate win/loss ratio for display
-  const winLossRatio = stats.avgWin && stats.avgLoss 
+  const winLossRatio = stats.avgWin && stats.avgLoss
     ? (stats.avgWin / Math.abs(stats.avgLoss)).toFixed(2)
     : null;
 
@@ -131,35 +94,33 @@ export default function StatsCards({ stats }: StatsCardsProps) {
         trend={getPnLTrend()}
         subtitle="All-time performance"
       />
-      
+
       <StatCard
-        title="Win Rate"
+        title="Win rate"
         value={`${stats.winRate.toFixed(1)}%`}
         change={stats.winRateChange}
         icon={<Target className="h-5 w-5" />}
         trend={getWinRateTrend()}
-        subtitle={winLossRatio ? `W/L Ratio: ${winLossRatio}` : undefined}
+        subtitle={winLossRatio ? `W/L ratio: ${winLossRatio}` : undefined}
       />
-      
+
       <StatCard
-        title="Total Trades"
+        title="Total trades"
         value={stats.totalTrades}
         icon={<Activity className="h-5 w-5" />}
         subtitle="Executed positions"
       />
-      
+
       <StatCard
-        title="Active Positions"
+        title="Active positions"
         value={stats.activePositions}
         icon={<Award className="h-5 w-5" />}
-        trend={stats.activePositions > 0 ? "neutral" : "neutral"}
         subtitle="Currently open"
       />
 
-      {/* Additional metrics if available */}
       {stats.avgWin !== undefined && (
         <StatCard
-          title="Avg Win"
+          title="Avg win"
           value={formatCurrency(stats.avgWin)}
           icon={<TrendingUp className="h-5 w-5" />}
           trend="up"
@@ -169,7 +130,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
 
       {stats.avgLoss !== undefined && (
         <StatCard
-          title="Avg Loss"
+          title="Avg loss"
           value={formatCurrency(stats.avgLoss)}
           icon={<TrendingDown className="h-5 w-5" />}
           trend="down"
@@ -179,17 +140,17 @@ export default function StatsCards({ stats }: StatsCardsProps) {
 
       {stats.profitFactor !== undefined && (
         <StatCard
-          title="Profit Factor"
+          title="Profit factor"
           value={stats.profitFactor.toFixed(2)}
           icon={<BarChart3 className="h-5 w-5" />}
           trend={stats.profitFactor > 1.5 ? "up" : stats.profitFactor < 1 ? "down" : "neutral"}
-          subtitle="Gross profit / Gross loss"
+          subtitle="Gross profit / gross loss"
         />
       )}
 
       {stats.sharpeRatio !== undefined && (
         <StatCard
-          title="Sharpe Ratio"
+          title="Sharpe ratio"
           value={stats.sharpeRatio.toFixed(2)}
           icon={<Percent className="h-5 w-5" />}
           trend={stats.sharpeRatio > 1 ? "up" : stats.sharpeRatio < 0 ? "down" : "neutral"}
