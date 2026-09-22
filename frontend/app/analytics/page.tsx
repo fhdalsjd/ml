@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import DashboardLayout from "@/components/DashboardLayout";
+import GlassCard from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, 
@@ -71,112 +73,90 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-gray-950 via-blue-950/20 to-gray-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="h-16 w-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
-            <BarChart3 className="h-8 w-8 text-blue-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+      <DashboardLayout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="h-16 w-16 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+              <BarChart3 className="h-8 w-8 text-indigo-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            </div>
+            <span className="text-slate-300 font-medium">Loading Analytics...</span>
           </div>
-          <span className="text-gray-300 font-medium">Loading Analytics...</span>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/10 to-gray-950 text-gray-100">
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-gray-900/80 border-b border-gray-800/50 shadow-2xl">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={() => router.push("/dashboard")}
-                className="border-gray-700 bg-gray-800/50 text-gray-300 hover:bg-gray-800"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  Performance Analytics
-                </h1>
-                <p className="text-sm text-gray-400">Deep insights into your trading performance</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-6 py-8 space-y-8">
+    <DashboardLayout>
+      <div className="space-y-8">
         {/* Advanced Stats Overview */}
         <div className="animate-fade-in">
           <div className="mb-4">
-            <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-              <Target className="h-5 w-5 text-blue-400" />
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Target className="h-5 w-5 text-indigo-400" />
               Advanced Metrics
             </h2>
-            <p className="text-sm text-gray-400 mt-1">Comprehensive performance indicators</p>
+            <p className="text-sm text-slate-400 mt-1">Comprehensive performance indicators</p>
           </div>
           <AdvancedStatsGrid trades={trades} stats={stats} />
         </div>
 
         {/* Performance Calendar */}
         <div className="animate-fade-in-delay-1">
-          <div className="bg-gradient-to-br from-gray-900/90 to-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800/50 shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-gray-800/50 bg-gradient-to-r from-blue-600/10 to-transparent">
+          <GlassCard glow="indigo">
+            <div className="p-6 border-b border-slate-800/50">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-                    <CalendarIcon className="h-5 w-5 text-blue-400" />
+                  <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <CalendarIcon className="h-5 w-5 text-indigo-400" />
                     Trading Calendar
                   </h2>
-                  <p className="text-sm text-gray-400 mt-1">Daily P&L heatmap visualization</p>
+                  <p className="text-sm text-slate-400 mt-1">Daily P&L heatmap visualization</p>
                 </div>
               </div>
             </div>
             <div className="p-6">
               <PerformanceCalendar trades={trades} />
             </div>
-          </div>
+          </GlassCard>
         </div>
 
         {/* Two-Column Layout for Strategy & Emotions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in-delay-2">
           {/* Strategy Breakdown */}
-          <div className="bg-gradient-to-br from-gray-900/90 to-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800/50 shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-gray-800/50 bg-gradient-to-r from-green-600/10 to-transparent">
+          <GlassCard glow="emerald">
+            <div className="p-6 border-b border-slate-800/50">
               <div>
-                <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-                  <PieChart className="h-5 w-5 text-green-400" />
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <PieChart className="h-5 w-5 text-emerald-400" />
                   Strategy Analysis
                 </h2>
-                <p className="text-sm text-gray-400 mt-1">Performance by trading strategy</p>
+                <p className="text-sm text-slate-400 mt-1">Performance by trading strategy</p>
               </div>
             </div>
             <div className="p-6">
               <StrategyBreakdown trades={trades} />
             </div>
-          </div>
+          </GlassCard>
 
           {/* Emotion Analysis */}
-          <div className="bg-gradient-to-br from-gray-900/90 to-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800/50 shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-gray-800/50 bg-gradient-to-r from-purple-600/10 to-transparent">
+          <GlassCard glow="purple">
+            <div className="p-6 border-b border-slate-800/50">
               <div>
-                <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                   <Activity className="h-5 w-5 text-purple-400" />
                   Emotion Patterns
                 </h2>
-                <p className="text-sm text-gray-400 mt-1">Psychology impact on performance</p>
+                <p className="text-sm text-slate-400 mt-1">Psychology impact on performance</p>
               </div>
             </div>
             <div className="p-6">
               <EmotionAnalysis trades={trades} />
             </div>
-          </div>
+          </GlassCard>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

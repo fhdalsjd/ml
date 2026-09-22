@@ -4,35 +4,35 @@
 
 @layer base {
   :root {
-    --background: 216 26% 7%;
-    --foreground: 210 22% 90%;
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
 
-    --card: 215 22% 11%;
-    --card-foreground: 210 22% 90%;
+    --card: 222 47% 7%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 215 24% 9%;
-    --popover-foreground: 210 22% 90%;
+    --popover: 222 47% 6%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 39 51% 55%;
-    --primary-foreground: 220 40% 9%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 215 18% 16%;
-    --secondary-foreground: 210 22% 90%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 215 20% 14%;
-    --muted-foreground: 215 12% 62%;
+    --muted: 217 19% 27%;
+    --muted-foreground: 215 16% 65%;
 
-    --accent: 215 18% 17%;
-    --accent-foreground: 210 22% 90%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 6 55% 55%;
-    --destructive-foreground: 30 40% 96%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 215 18% 18%;
-    --input: 215 18% 18%;
-    --ring: 39 51% 55%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 221 83% 53%;
 
-    --radius: 0.25rem;
+    --radius: 0.5rem;
   }
 }
 
@@ -77,46 +77,25 @@
     animation: fadeIn 0.5s ease-out 0.2s both;
   }
 
-  /* Faint horizontal rule lines — the ledger-paper motif used on key surfaces */
-  .bg-ledger {
-    background-image: repeating-linear-gradient(
-      to bottom,
-      hsla(var(--border) / 0.55) 0px,
-      hsla(var(--border) / 0.55) 1px,
-      transparent 1px,
-      transparent 34px
-    );
-  }
-
-  .bg-ledger-fine {
-    background-image: repeating-linear-gradient(
-      to bottom,
-      hsla(var(--border) / 0.4) 0px,
-      hsla(var(--border) / 0.4) 1px,
-      transparent 1px,
-      transparent 22px
-    );
-  }
-
   html {
     scroll-behavior: smooth;
   }
 
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(var(--background));
+    background: hsl(222 47% 4%);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 4px;
+    background: hsl(217 33% 17%);
+    border-radius: 5px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.4);
+    background: hsl(217 33% 22%);
   }
 }
