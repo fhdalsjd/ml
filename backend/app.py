@@ -1,46 +1,29 @@
-from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
-import subprocess
-import json
-import os
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from . import models, database
+from . import models, database, auth
+from .database import engine
 
-# Create tables
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-class MT5Credentials(BaseModel):
-    login: int
-    password: str
-    server: str
-    days_back: int = 30
+@app.post("/register")
+async def register(email: str, password: str, db: Session = Depends(database.get_db)):
+    hashed_pw = auth.get_password_hash(password)
+    user = models.User(email=email, hashed_password=hashed_pw)
+    db.add(user)
+    db.commit()
+    return {"message": "User created"}
 
-@app.post("/api/sync")
-async def sync_trades(creds: MT5Credentials, db: Session = Depends(database.get_db)):
-    env = os.environ.copy()
-    env["MT5_LOGIN"] = str(creds.login)
-    env["MT5_PASSWORD"] = creds.password
-    env["MT5_SERVER"] = creds.server
-    env["DAYS_BACK"] = str(creds.days_back)
-
-    try:
-        # Run sync script
-        result = subprocess.run(["python3", "mt5_sync.py"], capture_output=True, text=True, env=env)
-        data = json.loads(result.stdout)
-        
-        if "error" in data:
-            raise HTTPException(status_code=400, detail=data["error"])
-        
-        # Save to DB
-        for t in data:
-            db_trade = models.Trade(ticket=t['ticket'], symbol=t['symbol'], profit=t['profit'])
-            db.add(db_trade)
-        db.commit()
-        return {"status": "success", "trades": data}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
+    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+    token = auth.create_access_token({"sub": user.email})
+    return {"access_token": token, "token_type": "bearer"}
 
 @app.get("/api/trades")
 async def get_trades(db: Session = Depends(database.get_db)):
