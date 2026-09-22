@@ -72,6 +72,7 @@ MT5_PATH=
 # Backend API Settings
 API_URL=https://your-app.onrender.com
 API_KEY=your_api_key_here
+MT5_APP_USER_ID=1
 
 # Sync Configuration
 SYNC_INTERVAL_MINUTES=5
@@ -88,6 +89,7 @@ HISTORY_DAYS=30
 | `MT5_PATH` | Path to terminal64.exe (Linux only) | Linux only | - |
 | `API_URL` | Backend API base URL | Yes | - |
 | `API_KEY` | API key for authentication | Yes | - |
+| `MT5_APP_USER_ID` | Your user ID from the backend app | Yes | - |
 | `SYNC_INTERVAL_MINUTES` | Minutes between syncs | No | 5 |
 | `HISTORY_DAYS` | Days of history to fetch | No | 30 |
 
@@ -131,9 +133,10 @@ Content-Type: application/json
 ### Request Body
 ```json
 {
+  "user_id": 1,
   "trades": [
     {
-      "ticket": 123456,
+      "ticket": "123456",
       "order": 123455,
       "time": 1704067200,
       "time_msc": 1704067200000,

@@ -111,9 +111,9 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button onClick={handleSync} disabled={isSyncing} size="sm">
-                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? "animate-spin" : ""}`} />
-                {isSyncing ? "Syncing…" : "Sync MT5"}
+              <Button variant="outline" size="sm" onClick={() => router.push("/connect-mt5")}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Connect MT5
               </Button>
 
               <Button variant="outline" size="sm" onClick={() => router.push("/analytics")}>

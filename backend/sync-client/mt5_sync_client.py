@@ -55,6 +55,7 @@ class MT5SyncClient:
         # API Configuration
         self.api_url = os.getenv('API_URL', 'http://localhost:8000')
         self.api_key = os.getenv('API_KEY', '')
+        self.user_id = os.getenv('MT5_APP_USER_ID', '')
         
         # Sync Configuration
         self.sync_interval_minutes = int(os.getenv('SYNC_INTERVAL_MINUTES', 5))
@@ -79,6 +80,8 @@ class MT5SyncClient:
             raise ValueError("API_URL is required")
         if not self.api_key:
             raise ValueError("API_KEY is required")
+        if not self.user_id:
+            raise ValueError("MT5_APP_USER_ID is required")
     
     def connect_mt5(self) -> bool:
         """Connect to MetaTrader5 terminal."""
@@ -158,7 +161,7 @@ class MT5SyncClient:
             deals_list = []
             for deal in deals:
                 deal_dict = {
-                    'ticket': deal.ticket,
+                    'ticket': str(deal.ticket),  # Cast to string for payload compatibility
                     'order': deal.order,
                     'time': deal.time,
                     'time_msc': deal.time_msc,
@@ -199,6 +202,7 @@ class MT5SyncClient:
             }
             
             payload = {
+                'user_id': int(self.user_id),  # Include user_id in payload
                 'trades': deals,
                 'account': self.mt5_login,
                 'server': self.mt5_server

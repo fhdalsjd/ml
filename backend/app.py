@@ -214,6 +214,29 @@ async def regenerate_api_key(
     return current_user
 
 
+class SyncStatusResponse(BaseModel):
+    last_sync_time: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
+@app.get("/api/user/me/sync-status", response_model=SyncStatusResponse)
+async def get_sync_status(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get the last MT5 sync time for the current user (most recent trade created_at)"""
+    latest_trade = db.query(models.Trade)\
+        .filter(models.Trade.user_id == current_user.id)\
+        .order_by(models.Trade.created_at.desc())\
+        .first()
+    
+    return SyncStatusResponse(
+        last_sync_time=latest_trade.created_at if latest_trade else None
+    )
+
+
 # Trade endpoints
 @app.get("/api/trades", response_model=List[TradeResponse])
 async def get_trades(
