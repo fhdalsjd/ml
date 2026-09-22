@@ -1,7 +1,3 @@
 #!/bin/bash
-# Xvfb setup for Wine
-Xvfb :99 -screen 0 1024x768x24 &
-export DISPLAY=:99
-
-# Run the python script
-uvicorn app:app --host 0.0.0.0 --port 8000
+# Render uses $PORT env var. Default to 8000 if not set.
+uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}
