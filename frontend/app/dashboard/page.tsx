@@ -32,9 +32,10 @@ export default function DashboardPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const [tradesRes, statsRes] = await Promise.all([
-        fetch("/api/trades", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/stats", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/trades`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/stats`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       if (tradesRes.ok) setTrades(await tradesRes.json());
@@ -49,7 +50,8 @@ export default function DashboardPage() {
   const handleSync = async () => {
     try {
       setIsSyncing(true);
-      const res = await fetch("/api/sync-mt5", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const res = await fetch(`${apiUrl}/api/sync-mt5`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -73,7 +75,8 @@ export default function DashboardPage() {
     notes: { emotions: string; mistakes: string; strategy: string; screenshots?: string[] }
   ) => {
     try {
-      const res = await fetch(`/api/trades/${tradeId}/notes`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const res = await fetch(`${apiUrl}/api/trades/${tradeId}`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
