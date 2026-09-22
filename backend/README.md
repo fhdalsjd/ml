@@ -7,12 +7,24 @@ Professional FastAPI backend for a Forex trading journal with MT5 synchronizatio
 - ✅ **FastAPI** - Modern, fast web framework
 - ✅ **PostgreSQL** - Robust relational database with SQLAlchemy ORM
 - ✅ **JWT Authentication** - Secure token-based authentication
-- ✅ **MetaApi Integration** - Automatic MT5 trade synchronization (supports investor passwords)
-- ✅ **Background Scheduler** - Auto-sync every 5 minutes using APScheduler
+- ✅ **External MT5 Sync** - Bulk import endpoint for external MT5 clients
+- ✅ **API Key Authentication** - Secure bulk import with API key
 - ✅ **Comprehensive Statistics** - Win rate, P&L, drawdown, daily/weekly/monthly performance
 - ✅ **Trade Management** - Full CRUD operations with annotations (emotion, mistake, strategy)
 - ✅ **CORS Enabled** - Ready for frontend integration
-- ✅ **Docker Ready** - Optimized for Railway deployment
+- ✅ **Docker Ready** - Optimized for Render.com deployment
+
+## Architecture Changes (v2.0)
+
+### Removed
+- ❌ MetaApi dependency (paid service)
+- ❌ Internal scheduler (APScheduler)
+- ❌ mt5_sync.py (replaced with trade_import.py)
+
+### Added
+- ✅ External bulk import endpoint (`POST /api/trades/bulk`)
+- ✅ API key authentication for bulk imports
+- ✅ Render.com deployment configuration (render.yaml)
 
 ## Project Structure
 
@@ -22,12 +34,11 @@ backend/
 ├── database.py         # Database configuration and settings
 ├── models.py           # SQLAlchemy models (User, Trade)
 ├── auth.py             # JWT authentication and user management
-├── mt5_sync.py         # MetaApi integration for MT5 sync
+├── trade_import.py     # Bulk trade import logic
 ├── stats.py            # Trade statistics calculations
-├── scheduler.py        # Background job scheduler
 ├── requirements.txt    # Python dependencies
 ├── Dockerfile          # Docker configuration
-├── railway.json        # Railway deployment config
+├── render.yaml         # Render.com deployment config
 └── .env.example        # Environment variables template
 ```
 
@@ -39,12 +50,14 @@ Copy `.env.example` to `.env` and configure:
 
 ```bash
 DATABASE_URL=postgresql://user:password@localhost:5432/trading_journal
-SECRET_KEY=your-secret-key-here
+SECRET_KEY=your-secret-key-here-change-in-production
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=10080
-METAAPI_TOKEN=your-metaapi-token
+API_KEY=your-secure-api-key-here-change-in-production
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 ```
+
+**Important:** Generate secure random values for `SECRET_KEY` and `API_KEY` in production.
 
 ### 2. Local Development
 
@@ -70,14 +83,16 @@ docker build -t trading-journal-backend .
 docker run -p 8000:8000 --env-file .env trading-journal-backend
 ```
 
-### 4. Railway Deployment
+### 4. Render.com Deployment
 
-1. Install Railway CLI: `npm i -g @railway/cli`
-2. Login: `railway login`
-3. Initialize: `railway init`
-4. Add PostgreSQL: `railway add --database postgresql`
-5. Set environment variables in Railway dashboard
-6. Deploy: `railway up`
+1. Push your code to GitHub
+2. Create a new Blueprint instance in Render
+3. Point to `render.yaml` in your repository
+4. Render will automatically:
+   - Create a PostgreSQL database
+   - Deploy the web service
+   - Generate secure values for `SECRET_KEY` and `API_KEY`
+5. Update `ALLOWED_ORIGINS` with your frontend URL
 
 ## API Endpoints
 
@@ -87,7 +102,6 @@ docker run -p 8000:8000 --env-file .env trading-journal-backend
 
 ### User
 - `GET /api/user/me` - Get current user info
-- `POST /api/user/mt5-config` - Configure MT5 account
 
 ### Trades
 - `GET /api/trades` - Get all trades (with pagination and filters)
@@ -96,8 +110,40 @@ docker run -p 8000:8000 --env-file .env trading-journal-backend
 - `PATCH /api/trades/{id}` - Update trade annotations
 - `DELETE /api/trades/{id}` - Delete trade
 
-### MT5 Sync
-- `POST /api/sync-mt5` - Manually trigger MT5 sync
+### Bulk Import (External MT5 Client)
+- `POST /api/trades/bulk` - Import trades in bulk (requires X-API-Key header)
+
+**Request format:**
+```json
+{
+  "user_id": 1,
+  "trades": [
+    {
+      "ticket": "12345",
+      "symbol": "EURUSD",
+      "type": "BUY",
+      "open_time": "2024-01-01T10:00:00Z",
+      "close_time": "2024-01-01T12:00:00Z",
+      "profit": 25.50,
+      "volume": 0.1,
+      "open_price": 1.1000,
+      "close_price": 1.1050,
+      "commission": -2.00,
+      "swap": -0.50,
+      "stop_loss": 1.0950,
+      "take_profit": 1.1100
+    }
+  ]
+}
+```
+
+**Example with curl:**
+```bash
+curl -X POST https://your-api.onrender.com/api/trades/bulk \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secure-api-key" \
+  -d @trades.json
+```
 
 ### Statistics
 - `GET /api/stats` - Get comprehensive statistics
@@ -138,9 +184,22 @@ docker run -p 8000:8000 --env-file .env trading-journal-backend
 - Total volume
 - Daily/weekly/monthly performance breakdowns
 
-## Background Jobs
+## External MT5 Client Integration
 
-The scheduler runs automatically on startup and syncs all MT5 accounts every 5 minutes.
+To sync trades from MT5 to this API, your external MT5 client (EA or script) should:
+
+1. **Collect closed trades** from MT5 account
+2. **Format trades** according to the bulk import schema
+3. **Send POST request** to `/api/trades/bulk` with:
+   - Header: `X-API-Key: <your-api-key>`
+   - Header: `Content-Type: application/json`
+   - Body: JSON with `user_id` and `trades` array
+
+The endpoint will:
+- Create new trades that don't exist
+- Update existing trades (matched by ticket number)
+- Skip invalid trades and report errors
+- Return detailed import statistics
 
 ## Security
 
@@ -153,12 +212,23 @@ The scheduler runs automatically on startup and syncs all MT5 accounts every 5 m
 
 ## Production Considerations
 
-1. **Encrypt MT5 passwords** - Use Fernet or similar encryption
-2. **Add rate limiting** - Implement per-endpoint rate limits
-3. **Add logging** - Use structured logging (JSON format)
-4. **Monitor background jobs** - Add job failure notifications
+1. **Generate secure keys** - Use cryptographically secure random values for `SECRET_KEY` and `API_KEY`
+2. **Encrypt MT5 passwords** - Use Fernet or similar encryption if storing MT5 credentials
+3. **Add rate limiting** - Implement per-endpoint rate limits
+4. **Add logging** - Use structured logging (JSON format)
 5. **Database migrations** - Use Alembic for schema changes
-6. **API documentation** - Available at `/docs` (Swagger UI)
+6. **Monitor endpoints** - Set up uptime monitoring
+7. **API documentation** - Available at `/docs` (Swagger UI)
+
+## Migration from v1.0
+
+If migrating from the MetaApi version:
+
+1. Remove environment variable `METAAPI_TOKEN`
+2. Add environment variable `API_KEY`
+3. Set up external MT5 client to sync trades
+4. Existing trades in database will remain intact
+5. Update frontend to remove any scheduler-related UI
 
 ## License
 

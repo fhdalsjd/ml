@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080
-    metaapi_token: str
+    api_key: str  # API key for bulk import endpoint
     allowed_origins: str = "http://localhost:3000"
     
     class Config:

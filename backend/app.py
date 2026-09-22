@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -15,7 +15,7 @@ from auth import (
     get_current_user
 )
 import models
-from mt5_sync import get_mt5_syncer
+from trade_import import import_trades_bulk
 from stats import (
     TradeStats, PeriodStats,
     calculate_trade_statistics,
@@ -23,7 +23,6 @@ from stats import (
     get_weekly_performance,
     get_monthly_performance
 )
-from scheduler import get_scheduler
 
 # Configure logging
 logging.basicConfig(
@@ -35,8 +34,8 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI app
 app = FastAPI(
     title="Forex Trading Journal API",
-    description="Professional trading journal with MT5 sync and analytics",
-    version="1.0.0"
+    description="Professional trading journal with external MT5 sync and analytics",
+    version="2.0.0"
 )
 
 settings = get_settings()
@@ -106,41 +105,40 @@ class TradeResponse(BaseModel):
         from_attributes = True
 
 
-class MT5Config(BaseModel):
-    mt5_account_id: str
-    mt5_password: str  # Investor password
+class BulkTradeImport(BaseModel):
+    user_id: int
+    trades: List[dict]
 
 
-class SyncResponse(BaseModel):
+class BulkImportResponse(BaseModel):
     success: bool
-    synced: int
+    imported: int
     new: int
     updated: int
+    skipped: int
     total_trades: Optional[int] = None
+    errors: Optional[List[str]] = None
     error: Optional[str] = None
+
+
+# API Key authentication dependency
+async def verify_api_key(x_api_key: str = Header(...)):
+    """Verify API key for bulk import endpoint"""
+    if x_api_key != settings.api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key"
+        )
+    return x_api_key
 
 
 # Startup event
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database and start background scheduler"""
+    """Initialize database"""
     logger.info("Starting application...")
     init_db()
     logger.info("Database initialized")
-    
-    # Start background scheduler
-    scheduler = get_scheduler()
-    scheduler.start()
-    logger.info("Background scheduler started")
-
-
-# Shutdown event
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    logger.info("Shutting down application...")
-    scheduler = get_scheduler()
-    scheduler.shutdown()
 
 
 # Health check
@@ -207,22 +205,6 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
 async def get_current_user_info(current_user: models.User = Depends(get_current_user)):
     """Get current user information"""
     return current_user
-
-
-@app.post("/api/user/mt5-config")
-async def configure_mt5(
-    config: MT5Config,
-    current_user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Configure MT5 account for user"""
-    current_user.mt5_account_id = config.mt5_account_id
-    current_user.mt5_password = config.mt5_password  # In production, encrypt this
-    
-    db.commit()
-    logger.info(f"MT5 account configured for user: {current_user.email}")
-    
-    return {"message": "MT5 account configured successfully"}
 
 
 # Trade endpoints
@@ -344,22 +326,27 @@ async def delete_trade(
     return None
 
 
-# MT5 Sync endpoint
-@app.post("/api/sync-mt5", response_model=SyncResponse)
-async def sync_mt5_trades(
-    current_user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+# Bulk Trade Import endpoint (External MT5 client)
+@app.post("/api/trades/bulk", response_model=BulkImportResponse)
+async def bulk_import_trades(
+    import_data: BulkTradeImport,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
 ):
-    """Manually trigger MT5 sync for current user"""
-    if not current_user.mt5_account_id:
+    """
+    Bulk import trades from external MT5 client
+    Requires X-API-Key header for authentication
+    """
+    # Verify user exists
+    user = db.query(models.User).filter(models.User.id == import_data.user_id).first()
+    if not user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="MT5 account not configured. Please configure MT5 first."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {import_data.user_id} not found"
         )
     
-    logger.info(f"Manual MT5 sync triggered by {current_user.email}")
-    syncer = get_mt5_syncer()
-    result = await syncer.sync_user_trades(current_user, db)
+    logger.info(f"Bulk import triggered for user {user.email} with {len(import_data.trades)} trades")
+    result = import_trades_bulk(import_data.trades, import_data.user_id, db)
     
     return result
 
